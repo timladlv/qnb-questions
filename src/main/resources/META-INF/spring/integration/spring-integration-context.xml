@@ -7,13 +7,12 @@
                         http://www.springframework.org/schema/integration
                         http://www.springframework.org/schema/integration/spring-integration-2.1.xsd">
 
-	<!--  -->
+	<!-- -->
 	<int:gateway default-request-channel="webTxInitializer-channel"
 		id="webTxInitializerGateway" service-interface="com.lv.tica.service.WebTransactionGateway"></int:gateway>
 
 	<int:json-to-object-transformer
-		type="com.lv.tica.service.webtx.NewQuotingRequest" 
-		input-channel="webTxInitializer-channel"
+		type="com.lv.tica.service.webtx.NewQuotingRequest" input-channel="webTxInitializer-channel"
 		output-channel="webTxTransform-channel" />
 
 	<int:service-activator id="webTxInitializer-activator"
@@ -21,43 +20,42 @@
 		method="createWebTransactionContext" />
 
 	<bean id="webTxInitializer" class="com.lv.tica.service.WebTransactionInitializer" />
-	<!--  -->
+	<!-- -->
 
 	<int:gateway default-request-channel="questionGenerationGateway-channel"
-		id="questionGenerationGateway" service-interface="com.lv.tica.service.WebTransactionGateway"></int:gateway>
+		id="questionGenerationGateway" service-interface="com.lv.tica.service.QuestionGenerationGateway"/>
 
-	<int:header-filter id="checkQuestionValidity-filter" 
-		input-channel="questionGenerationGateway-channel" output-channel="questionValid-channel" />		
-	
 	<int:json-to-object-transformer
-		type="com.lv.tica.service.webtx.QuestionsRequest" 
-		input-channel="questionValid-channel"
+		type="com.lv.tica.service.webtx.NewQuotingRequest" input-channel="questionGenerationGateway-channel"
 		output-channel="questionGenerationTransform-channel" />
 
 	<int:service-activator id="questionGeneration-activator"
-		input-channel="questionGenerationTransform-channel"
-		ref="questionProvider" method="getQuestions"/>
+		input-channel="questionGenerationTransform-channel" ref="questionProvider"
+		method="getQuestions" />
 
 	<bean id="questionProvider" class="com.lv.tica.service.QuestionProvider" />
 
-	<!-- 
-	<int:json-to-object-transformer id="answerFromJsonTransformer"
+	<!-- --> 
 	<int:gateway default-request-channel="answerProcessingGateway-channel"
-		id="answerProcessingGateway"></int:gateway>
+		id="answerProcessingGateway" service-interface="com.lv.tica.service.AnswerProcessingGateway"/>
 
-		input-channel="answerProcessingGateway-channel" output-channel="answerObject-channel"></int:json-to-object-transformer>
+	<int:json-to-object-transformer id="answersFromJsonTransformer"
+		type="com.lv.tica.service.ProvidedAnswers"
+		input-channel="answerProcessingGateway-channel" output-channel="answerObject-channel"/>
 
-	<int:header-filter id="checkWebTxValidity-filter"
-		input-channel="answerObject-channel" output-channel="webTxValid-channel" />
-
-	<int:filter id="checkAnswerValidity-filter" input-channel="webTxValid-channel"
-		discard-channel="answerInvalid-channel" output-channel="answerValid-channel"></int:filter>
+	<int:filter id="answerObject-channel" input-channel="webTxValid-channel"
+		discard-channel="answerInvalid-channel" output-channel="answerValid-channel"
+		expression="true"/>
 
 	<int:service-activator id="processAnswer-activator"
-		input-channel="answerValid-channel"></int:service-activator>
+		ref="correctAnswerHandler" method="validateAnswers"
+		input-channel="answerValid-channel"/>
+
+	<bean id="correctAnswerHandler" class="com.lv.tica.service.CorrectAnswerHandler" />
 
 	<int:service-activator id="handleInvalidAnswer-activator"
-		input-channel="answerInvalid-channel"></int:service-activator>
-		
-	 -->
+	    ref="invalidAnswerHandler" method="throwInvalidAnswerException"
+		input-channel="answerInvalid-channel"/>
+	
+	<bean id="invalidAnswerHandler" class="com.lv.tica.service.InvalidAnswerHandler" />
 </beans>
