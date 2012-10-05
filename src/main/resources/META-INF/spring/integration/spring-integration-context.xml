@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:int="http://www.springframework.org/schema/integration"
+	xmlns:int-http="http://www.springframework.org/schema/integration/http"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+                        http://www.springframework.org/schema/beans/spring-beans.xsd
+                        http://www.springframework.org/schema/integration
+                        http://www.springframework.org/schema/integration/spring-integration-2.1.xsd">
+
+	<!--  -->
+	<int:gateway default-request-channel="webTxInitializer-channel"
+		id="webTxInitializerGateway" service-interface="com.lv.tica.service.WebTransactionGateway"></int:gateway>
+
+	<int:json-to-object-transformer
+		type="com.lv.tica.service.webtx.NewQuotingRequest" 
+		input-channel="webTxInitializer-channel"
+		output-channel="webTxTransform-channel" />
+
+	<int:service-activator id="webTxInitializer-activator"
+		input-channel="webTxTransform-channel" ref="webTxInitializer"
+		method="createWebTransactionContext" />
+
+	<bean id="webTxInitializer" class="com.lv.tica.service.WebTransactionInitializer" />
+	<!--  -->
+
+	<int:gateway default-request-channel="questionGenerationGateway-channel"
+		id="questionGenerationGateway" service-interface="com.lv.tica.service.WebTransactionGateway"></int:gateway>
+
+	<int:header-filter id="checkQuestionValidity-filter" 
+		input-channel="questionGenerationGateway-channel" output-channel="questionValid-channel" />		
+	
+	<int:json-to-object-transformer
+		type="com.lv.tica.service.webtx.QuestionsRequest" 
+		input-channel="questionValid-channel"
+		output-channel="questionGenerationTransform-channel" />
+
+	<int:service-activator id="questionGeneration-activator"
+		input-channel="questionGenerationTransform-channel"
+		ref="questionProvider" method="getQuestions"/>
+
+	<bean id="questionProvider" class="com.lv.tica.service.QuestionProvider" />
+
+	<!-- 
+	<int:json-to-object-transformer id="answerFromJsonTransformer"
+	<int:gateway default-request-channel="answerProcessingGateway-channel"
+		id="answerProcessingGateway"></int:gateway>
+
+		input-channel="answerProcessingGateway-channel" output-channel="answerObject-channel"></int:json-to-object-transformer>
+
+	<int:header-filter id="checkWebTxValidity-filter"
+		input-channel="answerObject-channel" output-channel="webTxValid-channel" />
+
+	<int:filter id="checkAnswerValidity-filter" input-channel="webTxValid-channel"
+		discard-channel="answerInvalid-channel" output-channel="answerValid-channel"></int:filter>
+
+	<int:service-activator id="processAnswer-activator"
+		input-channel="answerValid-channel"></int:service-activator>
+
+	<int:service-activator id="handleInvalidAnswer-activator"
+		input-channel="answerInvalid-channel"></int:service-activator>
+		
+	 -->
+</beans>

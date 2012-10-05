@@ -1,0 +1,54 @@
+apply plugin: 'java'
+apply plugin: 'application'
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+apply plugin: 'jetty'
+
+
+repositories {
+	mavenCentral()
+	maven { url 'http://repo.springsource.org/libs-milestone' }
+}
+
+sourceCompatibility=1.6
+targetCompatibility=1.6
+
+eclipse {
+	project { natures += 'org.springframework.ide.eclipse.core.springnature' }
+}
+
+mainClassName = "com.lv.tica.Main"
+
+run{ standardInput = System.in }
+
+dependencies {
+	compile "org.springframework:spring-core:$springVersion"
+	compile "org.springframework:spring-context:$springVersion"
+	compile "org.springframework:spring-web:$springVersion"
+	compile "org.springframework:spring-webmvc:$springVersion"
+	compile "org.springframework:spring-context-support:$springVersion"
+	// compile "org.springframework:spring-jmx:$springVersion"
+	compile "org.springframework.integration:spring-integration-core:$springIntegrationVersion"
+	compile "org.springframework.integration:spring-integration-jmx:$springIntegrationVersion"
+	compile "org.springframework.integration:spring-integration-jms:$springIntegrationVersion"
+	compile "org.springframework.integration:spring-integration-http:$springIntegrationVersion"
+
+	compile "org.springframework.webflow:spring-webflow:$webflowVersion"
+
+	compile "javax.servlet:jstl:$jstlVersion"
+
+	compile "ch.qos.logback:logback-classic:1.0.0"
+	compile "org.slf4j:slf4j-api:$slf4jVersion"
+	compile "org.slf4j:log4j-over-slf4j:$slf4jVersion"
+	compile "org.slf4j:jcl-over-slf4j:$slf4jVersion"
+	compile "org.codehaus.jackson:jackson-mapper-asl:1.9.9"
+	compile "org.codehaus.jackson:jackson-core-asl:1.9.9"
+
+	//embedded broker
+	compile "org.apache.activemq:activemq-all:5.6.0"
+	compile "org.apache.xbean:xbean-spring:3.11.1"
+	
+
+	testCompile "junit:junit-dep:$junitVersion"
+	testCompile "org.springframework:spring-test:$springVersion"
+}

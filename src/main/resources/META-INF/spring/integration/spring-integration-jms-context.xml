@@ -1,0 +1,50 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:int="http://www.springframework.org/schema/integration"
+	xmlns:int-stream="http://www.springframework.org/schema/integration/stream"
+	xmlns:int-jms="http://www.springframework.org/schema/integration/jms"
+	xmlns:amq="http://activemq.apache.org/schema/core"
+	xsi:schemaLocation="
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/integration http://www.springframework.org/schema/integration/spring-integration.xsd
+		http://www.springframework.org/schema/integration/stream http://www.springframework.org/schema/integration/stream/spring-integration-stream.xsd
+		http://www.springframework.org/schema/integration/jms http://www.springframework.org/schema/integration/jms/spring-integration-jms.xsd
+		http://activemq.apache.org/schema/core http://activemq.apache.org/schema/core/activemq-core.xsd">
+		
+		
+		<!-- Set up the connection factory. You must name the bean "connectionFactory" for the JMS-backed
+	channels to automatically find it. Otherwise, you must specify the connection when you declare the
+	channel -->
+	<bean id="connectionFactory" class="org.springframework.jms.connection.CachingConnectionFactory">
+		<property name="targetConnectionFactory">
+			<bean class="org.apache.activemq.ActiveMQConnectionFactory">
+				<property name="brokerURL" value="tcp://localhost:61616"/>
+			</bean>
+		</property>
+		<property name="sessionCacheSize" value="10"/>
+		<property name="cacheProducers" value="false"/>
+	</bean>
+
+	<!-- Set up a live broker with a transport connector at port 61616 (default 
+		amq port) We imported the ActiveMQ schema so we can use the schema support. 
+		When this application shuts down, so does the broker. You can omit the embedded 
+		declaration here and set up the broker stand alone and use the standard ActiveMQ 
+		HighAvailability mechanism. You can also use the peer:// scheme to link up 
+		multiple embedded brokers. See the docs for more: http://activemq.apache.org/peer-transport-reference.html -->
+	<amq:broker  brokerName="qnb-service-broker">
+		<amq:transportConnectors>
+			<amq:transportConnector name="openwire"
+				uri="tcp://localhost:61616" />
+		</amq:transportConnectors>
+	</amq:broker>
+	
+	<bean id="webTxInitializer-jms" class="org.apache.activemq.command.ActiveMQQueue">
+		<constructor-arg value="webTxInitializer-jms"/>
+	</bean>
+
+	<int-jms:inbound-gateway id="jmsInGateway"
+		request-destination="webTxInitializer-jms" request-channel="webTxInitializerGateway-jms" />
+
+	<int:service-activator input-channel="webTxInitializerGateway-jms"
+		expression="@webTxInitializerGateway.initialize(payload)" />
+
+</beans>
